@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import DashboardHeader from '@/components/DashboardHeader';
 import PatientSidebar from '@/components/PatientSidebar';
 import BloodPressureChart from '@/components/BloodPressureChart';
@@ -7,119 +8,87 @@ import PatientProfile from '@/components/PatientProfile';
 import DiagnosticList from '@/components/DiagnosticList';
 import LabResults from '@/components/LabResults';
 
-//todo: remove mock functionality - Replace with API data
-const mockPatients = [
-  { name: "Emily Williams", gender: "Female", age: 18, profile_picture: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emily" },
-  { name: "Ryan Johnson", gender: "Male", age: 45, profile_picture: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ryan" },
-  { name: "Brandon Mitchell", gender: "Male", age: 36, profile_picture: "https://api.dicebear.com/7.x/avataaars/svg?seed=Brandon" },
-  { name: "Jessica Taylor", gender: "Female", age: 28, profile_picture: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jessica" },
-];
-
-//todo: remove mock functionality - Replace with API data
-const mockPatientData = {
-  name: "Jessica Taylor",
-  gender: "Female",
-  age: 28,
-  profile_picture: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jessica",
-  date_of_birth: "1996-08-23",
-  phone_number: "(415) 555-1234",
-  emergency_contact: "(415) 555-5678",
-  insurance_type: "Sunrise Health Assurance",
-  diagnosis_history: [
-    { 
-      month: "March", 
-      year: 2024, 
-      blood_pressure: { 
-        systolic: { value: 160, levels: "Higher than Average" }, 
-        diastolic: { value: 78, levels: "Lower than Average" } 
-      },
-      heart_rate: { value: 78, levels: "Lower than Average" },
-      respiratory_rate: { value: 20, levels: "Normal" },
-      temperature: { value: 98.6, levels: "Normal" }
-    },
-    { 
-      month: "February", 
-      year: 2024, 
-      blood_pressure: { 
-        systolic: { value: 140, levels: "Normal" }, 
-        diastolic: { value: 80, levels: "Normal" } 
-      },
-      heart_rate: { value: 75, levels: "Normal" },
-      respiratory_rate: { value: 18, levels: "Normal" },
-      temperature: { value: 98.4, levels: "Normal" }
-    },
-    { 
-      month: "January", 
-      year: 2024, 
-      blood_pressure: { 
-        systolic: { value: 145, levels: "Normal" }, 
-        diastolic: { value: 82, levels: "Normal" } 
-      },
-      heart_rate: { value: 76, levels: "Normal" },
-      respiratory_rate: { value: 19, levels: "Normal" },
-      temperature: { value: 98.5, levels: "Normal" }
-    },
-    { 
-      month: "December", 
-      year: 2023, 
-      blood_pressure: { 
-        systolic: { value: 130, levels: "Normal" }, 
-        diastolic: { value: 75, levels: "Normal" } 
-      },
-      heart_rate: { value: 72, levels: "Normal" },
-      respiratory_rate: { value: 17, levels: "Normal" },
-      temperature: { value: 98.3, levels: "Normal" }
-    },
-    { 
-      month: "November", 
-      year: 2023, 
-      blood_pressure: { 
-        systolic: { value: 135, levels: "Normal" }, 
-        diastolic: { value: 77, levels: "Normal" } 
-      },
-      heart_rate: { value: 74, levels: "Normal" },
-      respiratory_rate: { value: 18, levels: "Normal" },
-      temperature: { value: 98.6, levels: "Normal" }
-    },
-    { 
-      month: "October", 
-      year: 2023, 
-      blood_pressure: { 
-        systolic: { value: 125, levels: "Normal" }, 
-        diastolic: { value: 70, levels: "Normal" } 
-      },
-      heart_rate: { value: 70, levels: "Normal" },
-      respiratory_rate: { value: 16, levels: "Normal" },
-      temperature: { value: 98.2, levels: "Normal" }
-    },
-  ],
-  diagnostic_list: [
-    { name: "Hypertension", description: "Chronic high blood pressure", status: "Under Observation" },
-    { name: "Type 2 Diabetes", description: "Insulin resistance and elevated blood sugar", status: "Cured" },
-    { name: "Asthma", description: "Respiratory condition causing breathing difficulties", status: "Inactive" },
-    { name: "Osteoarthritis", description: "Joint pain and stiffness", status: "Untreated" },
-    { name: "Allergic Rhinitis", description: "Seasonal allergies", status: "Active" },
-    { name: "Gastroesophageal Reflux", description: "Acid reflux disease", status: "Under Observation" },
-  ],
-  lab_results: [
-    "Blood Tests",
-    "CT Scans",
-    "Radiology Reports",
-    "X-Rays",
-    "Urine Test",
-    "Cholesterol Test",
-    "Liver Function Test",
-    "Kidney Function Test",
-  ],
-};
+interface PatientData {
+  name: string;
+  gender: string;
+  age: number;
+  profile_picture: string;
+  date_of_birth: string;
+  phone_number: string;
+  emergency_contact: string;
+  insurance_type: string;
+  diagnosis_history: Array<{
+    month: string;
+    year: number;
+    blood_pressure: {
+      systolic: { value: number; levels: string };
+      diastolic: { value: number; levels: string };
+    };
+    heart_rate: { value: number; levels: string };
+    respiratory_rate: { value: number; levels: string };
+    temperature: { value: number; levels: string };
+  }>;
+  diagnostic_list: Array<{
+    name: string;
+    description: string;
+    status: string;
+  }>;
+  lab_results: string[];
+}
 
 export default function Dashboard() {
   const [selectedPatient] = useState("Jessica Taylor");
-  const latestVitals = mockPatientData.diagnosis_history[0];
+
+  const { data: allPatients, isLoading: patientsLoading } = useQuery({
+    queryKey: ['patients', 'all'],
+    queryFn: async () => {
+      const response = await fetch('/api/patients/all');
+      if (!response.ok) throw new Error('Failed to fetch patients');
+      return response.json();
+    },
+  });
+
+  const { data: patientData, isLoading: patientLoading, error } = useQuery<PatientData>({
+    queryKey: ['patient', selectedPatient],
+    queryFn: async () => {
+      const response = await fetch('/api/patients');
+      if (!response.ok) throw new Error('Failed to fetch patient data');
+      return response.json();
+    },
+  });
+
+  if (patientsLoading || patientLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-lg">Loading patient data...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-lg text-red-500">Error loading patient data. Please try again.</div>
+      </div>
+    );
+  }
+
+  if (!patientData) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-lg">No patient data available.</div>
+      </div>
+    );
+  }
+
+  const latestVitals = patientData.diagnosis_history[0];
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <PatientSidebar patients={mockPatients} activePatient={selectedPatient} />
+      <PatientSidebar 
+        patients={allPatients || []} 
+        activePatient={selectedPatient} 
+      />
       
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader patientName={selectedPatient} />
@@ -128,7 +97,7 @@ export default function Dashboard() {
           <div className="p-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-8">
-                <BloodPressureChart data={mockPatientData.diagnosis_history} />
+                <BloodPressureChart data={patientData.diagnosis_history} />
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   <VitalSignCard
@@ -157,22 +126,22 @@ export default function Dashboard() {
                   />
                 </div>
                 
-                <DiagnosticList diagnostics={mockPatientData.diagnostic_list} />
+                <DiagnosticList diagnostics={patientData.diagnostic_list} />
               </div>
               
               <div className="space-y-8">
                 <PatientProfile
-                  name={mockPatientData.name}
-                  gender={mockPatientData.gender}
-                  age={mockPatientData.age}
-                  profile_picture={mockPatientData.profile_picture}
-                  date_of_birth={mockPatientData.date_of_birth}
-                  phone_number={mockPatientData.phone_number}
-                  emergency_contact={mockPatientData.emergency_contact}
-                  insurance_type={mockPatientData.insurance_type}
+                  name={patientData.name}
+                  gender={patientData.gender}
+                  age={patientData.age}
+                  profile_picture={patientData.profile_picture}
+                  date_of_birth={patientData.date_of_birth}
+                  phone_number={patientData.phone_number}
+                  emergency_contact={patientData.emergency_contact}
+                  insurance_type={patientData.insurance_type}
                 />
                 
-                <LabResults results={mockPatientData.lab_results} />
+                <LabResults results={patientData.lab_results} />
               </div>
             </div>
           </div>
