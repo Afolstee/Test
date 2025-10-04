@@ -1,6 +1,5 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
-//todo: remove mock functionality
 interface Patient {
   name: string;
   gender: string;

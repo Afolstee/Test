@@ -1,4 +1,3 @@
-//todo: remove mock functionality
 interface LabResultsProps {
   results: string[];
 }

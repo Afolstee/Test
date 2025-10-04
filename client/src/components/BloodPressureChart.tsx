@@ -22,7 +22,6 @@ ChartJS.register(
   Filler
 );
 
-//todo: remove mock functionality
 interface DiagnosisHistoryItem {
   month: string;
   year: number;

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import DashboardHeader from '@/components/DashboardHeader';
-import PatientSidebar from '@/components/PatientSidebar';
-import BloodPressureChart from '@/components/BloodPressureChart';
-import VitalSignCard from '@/components/VitalSignCard';
-import PatientProfile from '@/components/PatientProfile';
-import DiagnosticList from '@/components/DiagnosticList';
-import LabResults from '@/components/LabResults';
+import DashboardHeader from '../components/DashboardHeader';
+import PatientSidebar from '../components/PatientSidebar';
+import BloodPressureChart from '../components/BloodPressureChart';
+import VitalSignCard from '../components/VitalSignCard';
+import PatientProfile from '../components/PatientProfile';
+import DiagnosticList from '../components/DiagnosticList';
+import LabResults from '../components/LabResults';
 
 interface PatientData {
   name: string;
